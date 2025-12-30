@@ -1,0 +1,42 @@
+name: Update Playlist
+
+on:
+  schedule:
+    - cron: '0 */1* * *'  # Updates every 1 hours
+  workflow_dispatch:        # Manual update button
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Merge Playlists
+        run: |
+          echo "#EXTM3U" > merged.m3u
+          echo "# Merged Playlist" >> merged.m3u
+          echo "# Updated: $(date)" >> merged.m3u
+          echo "" >> merged.m3u
+          
+          # Read each URL and merge
+          while read url; do
+            [[ -z "$url" || "$url" == \#* ]] && continue
+            curl -s "$url" | grep '^http' >> temp.txt 2>/dev/null || true
+          done < sources.txt
+          
+          # Remove duplicates and add to playlist
+          sort -u temp.txt | while read stream; do
+            echo "#EXTINF:-1,Channel" >> merged.m3u
+            echo "$stream" >> merged.m3u
+          done
+          
+          rm -f temp.txt
+          
+      - name: Commit Changes
+        run: |
+          git config --global user.name "Auto Updater"
+          git config --global user.email "updater@example.com"
+          git add merged.m3u
+          git commit -m "Auto-update: $(date)" || exit 0
+          git push
