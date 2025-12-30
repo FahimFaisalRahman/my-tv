@@ -2,7 +2,7 @@ name: Update Playlist
 
 on:
   schedule:
-    - cron: '0 */1* * *'  # Updates every 1 hours
+    - cron: '0 */6 * * *'  # Updates every 6 hours
   workflow_dispatch:        # Manual update button
 
 jobs:
